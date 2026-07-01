@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Table Order — 아키텍처 문서</title>
+  <style>
+    :root {
+      --primary: #1B4332;
+      --primary-light: #2D6A4F;
+      --accent: #D4A853;
+      --accent-light: #F4C874;
+      --bg: #F8F6F1;
+      --bg-card: #FFFFFF;
+      --text: #1a1a1a;
+      --text-muted: #6B7280;
+      --border: #E5E7EB;
+      --ai: #7C3AED;
+      --ai-light: #EDE9FE;
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+    /* NAV */
+    nav {
+      background: var(--primary);
+      color: #fff;
+      padding: 0 40px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      display: flex; align-items: center; justify-content: space-between; height: 56px;
+    }
+    nav .logo { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }
+    nav .links { display: flex; gap: 6px; }
+    nav .links a {
+      color: rgba(255,255,255,0.75); text-decoration: none; font-size: 13px;
+      padding: 6px 12px; border-radius: 8px; transition: all 0.2s;
+    }
+    nav .links a:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, #1B4332 0%, #2D6A4F 60%, #40916C 100%);
+      color: #fff; padding: 72px 40px 60px; text-align: center;
+    }
+    .hero h1 { font-size: 36px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 12px; }
+    .hero p { font-size: 16px; opacity: 0.8; max-width: 560px; margin: 0 auto 32px; }
+    .hero .badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .badge {
+      padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .badge-green  { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; }
+    .badge-yellow { background: var(--accent); color: #1a1a1a; }
+    .badge-purple { background: #7C3AED; color: #fff; }
+
+    /* LAYOUT */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 40px; }
+    section { padding: 56px 0; }
+    section + section { border-top: 1px solid var(--border); }
+
+    h2 { font-size: 24px; font-weight: 700; color: var(--primary); margin-bottom: 6px; letter-spacing: -0.02em; }
+    .section-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
+
+    /* CARDS */
+    .card {
+      background: var(--bg-card); border-radius: var(--radius);
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+      padding: 24px;
+    }
+    .card h3 { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+    /* STACK BADGES */
+    .stack-item {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px; text-align: center; box-shadow: var(--shadow);
+    }
+    .stack-item .icon { font-size: 32px; margin-bottom: 8px; }
+    .stack-item .name { font-size: 14px; font-weight: 700; color: var(--primary); }
+    .stack-item .ver  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ARCH DIAGRAM */
+    .arch-diagram {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 40px; box-shadow: var(--shadow);
+    }
+    .arch-row { display: flex; align-items: center; justify-content: center; gap: 0; margin: 8px 0; }
+    .arch-box {
+      border-radius: 10px; padding: 14px 22px; text-align: center; min-width: 140px;
+      font-size: 13px; font-weight: 600; line-height: 1.4;
+    }
+    .arch-box.browser  { background: #EFF6FF; border: 2px solid #3B82F6; color: #1D4ED8; }
+    .arch-box.frontend { background: #F0FDF4; border: 2px solid #22C55E; color: #15803D; }
+    .arch-box.backend  { background: #FFF7ED; border: 2px solid #F97316; color: #C2410C; }
+    .arch-box.db       { background: #F5F3FF; border: 2px solid #8B5CF6; color: #6D28D9; }
+    .arch-box.ai       { background: var(--ai-light); border: 2px solid var(--ai); color: var(--ai); }
+    .arch-arrow { font-size: 22px; color: var(--text-muted); margin: 0 8px; }
+    .arch-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+    .arch-group {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .arch-vert-arrow { font-size: 18px; color: var(--text-muted); }
+
+    /* API TABLE */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: var(--primary); color: #fff; padding: 10px 14px; text-align: left; font-weight: 600; }
+    th:first-child { border-radius: 8px 0 0 0; }
+    th:last-child  { border-radius: 0 8px 0 0; }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #F9FAFB; }
+    .method {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
+    }
+    .method.get    { background: #DCFCE7; color: #15803D; }
+    .method.post   { background: #FEF9C3; color: #854D0E; }
+    .method.put    { background: #DBEAFE; color: #1D4ED8; }
+    .method.patch  { background: #FEE2E2; color: #B91C1C; }
+    .method.delete { background: #FCE7F3; color: #9D174D; }
+
+    /* AI SECTION */
+    .ai-highlight {
+      background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+      border: 2px solid var(--ai); border-radius: var(--radius);
+      padding: 28px; margin-bottom: 20px;
+    }
+    .ai-highlight h3 { color: var(--ai); font-size: 17px; margin-bottom: 12px; }
+    .ai-flow {
+      display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin-top: 20px;
+    }
+    .ai-step {
+      background: #fff; border: 1px solid #C4B5FD; border-radius: 10px;
+      padding: 12px 18px; font-size: 13px; text-align: center; min-width: 120px;
+    }
+    .ai-step .num { font-size: 18px; font-weight: 800; color: var(--ai); }
+    .ai-step .lbl { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .ai-arrow { font-size: 20px; color: #A78BFA; margin: 0 6px; }
+
+    /* FEATURE LIST */
+    .feature-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .feature-list li {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px 16px; font-size: 13px;
+    }
+    .feature-list li .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* DATA MODEL */
+    .model-box {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+    }
+    .model-header {
+      background: var(--primary); color: #fff;
+      padding: 10px 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.02em;
+    }
+    .model-field {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 16px; border-bottom: 1px solid var(--border); font-size: 12px;
+    }
+    .model-field:last-child { border-bottom: none; }
+    .model-field .fname { font-weight: 600; color: var(--text); }
+    .model-field .ftype { color: var(--text-muted); font-family: monospace; font-size: 11px; }
+    .model-field .fkey  { font-size: 10px; background: var(--accent); color: #1a1a1a; padding: 1px 6px; border-radius: 4px; font-weight: 700; }
+
+    /* FOOTER */
+    footer {
+      background: var(--primary); color: rgba(255,255,255,0.6);
+      text-align: center; padding: 28px 40px; font-size: 13px; margin-top: 40px;
+    }
+    footer strong { color: #fff; }
+
+    @media (max-width: 768px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 26px; }
+      .container { padding: 0 20px; }
+      nav { padding: 0 20px; }
+      .arch-row { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">🍽️ Table Order — Architecture</div>
+  <div class="links">
+    <a href="#stack">Tech Stack</a>
+    <a href="#architecture">아키텍처</a>
+    <a href="#features">기능</a>
+    <a href="#api">API</a>
+    <a href="#datamodel">데이터 모델</a>
+    <a href="#ai">AI 연동</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>현아의 다이닝 — Table Order System</h1>
+  <p>AI-DLC 방법론으로 개발된 레스토랑 테이블 주문 시스템.<br>Groq AI 메뉴 추천 챗봇이 통합되어 있습니다.</p>
+  <div class="badges">
+    <span class="badge badge-green">FastAPI + React</span>
+    <span class="badge badge-green">SQLite</span>
+    <span class="badge badge-green">Docker</span>
+    <span class="badge badge-yellow">SSE 실시간</span>
+    <span class="badge badge-purple">🤖 Groq AI</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- TECH STACK -->
+  <section id="stack">
+    <h2>Tech Stack</h2>
+    <p class="section-sub">프론트엔드, 백엔드, 인프라, AI 레이어의 핵심 기술</p>
+    <div class="grid-4">
+      <div class="stack-item"><div class="icon">⚛️</div><div class="name">React 18.3</div><div class="ver">Vite 5.4 · React Router 6</div></div>
+      <div class="stack-item"><div class="icon">🐍</div><div class="name">FastAPI 0.115</div><div class="ver">Python 3.12 · Uvicorn</div></div>
+      <div class="stack-item"><div class="icon">🗄️</div><div class="name">SQLite</div><div class="ver">SQLAlchemy 2.0 ORM</div></div>
+      <div class="stack-item"><div class="icon">🐳</div><div class="name">Docker Compose</div><div class="ver">2-service stack</div></div>
+      <div class="stack-item"><div class="icon">🔐</div><div class="name">JWT Auth</div><div class="ver">python-jose · bcrypt</div></div>
+      <div class="stack-item"><div class="icon">📡</div><div class="name">SSE</div><div class="ver">sse-starlette 2.1</div></div>
+      <div class="stack-item"><div class="icon">🤖</div><div class="name">Groq API</div><div class="ver">llama-3.3-70b-versatile</div></div>
+      <div class="stack-item"><div class="icon">📦</div><div class="name">OpenAI SDK</div><div class="ver">호환 클라이언트 (openai≥1.0)</div></div>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section id="architecture">
+    <h2>시스템 아키텍처</h2>
+    <p class="section-sub">클라이언트부터 AI 외부 API까지의 요청 흐름</p>
+    <div class="arch-diagram">
+      <!-- Row 1: clients -->
+      <div style="display:flex; justify-content:center; gap:24px; margin-bottom:6px;">
+        <div class="arch-group">
+          <div class="arch-box browser">👤 고객 브라우저</div>
+          <div class="arch-label">:5173/customer</div>
+        </div>
+        <div class="arch-group">
+          <div class="arch-box browser">🛠️ 어드민 브라우저</div>
+          <div class="arch-label">:5173/admin</div>
+        </div>
+      </div>
+
+      <!-- Arrow down -->
+      <div style="text-align:center; font-size:22px; color:var(--text-muted); margin:4px 0;">↓ HTTP / SSE</div>
+
+      <!-- Row 2: frontend -->
+      <div style="display:flex; justify-content:center; margin-bottom:6px;">
+        <div class="arch-group">
+          <div class="arch-box frontend" style="min-width:320px;">⚛️ React Frontend (Vite Dev Server)</div>
+          <div class="arch-label">CustomerApp · AdminApp · api.js</div>
+        </div>
+      </div>
+
+      <div style="text-align:center; font-size:22px; color:var(--text-muted); margin:4px 0;">↓ REST API + SSE (/api/*)</div>
+
+      <!-- Row 3: backend -->
+      <div style="display:flex; justify-content:center; margin-bottom:6px;">
+        <div class="arch-group">
+          <div class="arch-box backend" style="min-width:520px;">
+            🐍 FastAPI Backend (:8000)<br>
+            <span style="font-size:11px; font-weight:400; opacity:0.8;">auth · menu · orders · tables · sse · history · stats · call · <strong>chat</strong></span>
+          </div>
+          <div class="arch-label">SQLAlchemy ORM · JWT 인증 · SSEManager</div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:center; gap:80px; margin:4px 0;">
+        <div style="text-align:center; color:var(--text-muted);">↓ SQLAlchemy</div>
+        <div style="text-align:center; color:#A78BFA;">↗ HTTPS (OpenAI compat)</div>
+      </div>
+
+      <!-- Row 4: db + ai -->
+      <div style="display:flex; justify-content:center; gap:40px;">
+        <div class="arch-group">
+          <div class="arch-box db">🗄️ SQLite</div>
+          <div class="arch-label">/app/data/tableorder.db</div>
+        </div>
+        <div class="arch-group">
+          <div class="arch-box ai">🤖 Groq API</div>
+          <div class="arch-label">api.groq.com · llama-3.3-70b</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <h2>주요 기능</h2>
+    <p class="section-sub">고객 앱, 어드민 앱, AI 기능으로 구분</p>
+    <div class="grid-3">
+      <div class="card">
+        <h3>👤 고객 앱</h3>
+        <ul class="feature-list">
+          <li><span class="icon">🔐</span><div><strong>테이블 로그인</strong><br>테이블 번호 + 비밀번호 JWT 인증</div></li>
+          <li><span class="icon">🍽️</span><div><strong>메뉴 탐색</strong><br>카테고리 탭, 이미지/설명/가격 표시</div></li>
+          <li><span class="icon">🛒</span><div><strong>장바구니</strong><br>수량 조절, 합계 실시간 계산</div></li>
+          <li><span class="icon">📋</span><div><strong>주문 내역</strong><br>세션별 주문 상태 실시간 조회</div></li>
+          <li><span class="icon">🔔</span><div><strong>직원 호출</strong><br>버튼 1회 클릭으로 어드민에 알림</div></li>
+          <li><span class="icon">🤖</span><div><strong>AI 메뉴 추천</strong><br>Groq 챗봇으로 자연어 메뉴 상담</div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>🛠️ 어드민 앱</h3>
+        <ul class="feature-list">
+          <li><span class="icon">📊</span><div><strong>실시간 대시보드</strong><br>SSE로 신규 주문 즉시 수신, 상태 변경</div></li>
+          <li><span class="icon">🗂️</span><div><strong>메뉴 관리</strong><br>카테고리/메뉴 CRUD, 정렬 순서 변경</div></li>
+          <li><span class="icon">🪑</span><div><strong>테이블 관리</strong><br>테이블 등록/비밀번호 설정/세션 종료</div></li>
+          <li><span class="icon">📈</span><div><strong>매출 통계</strong><br>일별·월별 매출 차트 및 집계</div></li>
+          <li><span class="icon">🕓</span><div><strong>주문 히스토리</strong><br>테이블별 날짜 범위 조회</div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>⚙️ 시스템 기능</h3>
+        <ul class="feature-list">
+          <li><span class="icon">📡</span><div><strong>SSE 실시간 푸시</strong><br>new_order / order_updated / table_completed 이벤트</div></li>
+          <li><span class="icon">🔑</span><div><strong>이중 인증</strong><br>어드민 계정 / 테이블 계정 분리</div></li>
+          <li><span class="icon">🌱</span><div><strong>자동 시드 데이터</strong><br>서버 기동 시 메뉴/카테고리 자동 생성</div></li>
+          <li><span class="icon">🗄️</span><div><strong>SQLite 퍼시스턴스</strong><br>Docker 볼륨으로 DB 데이터 유지</div></li>
+          <li><span class="icon">🐳</span><div><strong>Docker 2-service 구성</strong><br>backend + frontend 컨테이너</div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- API ENDPOINTS -->
+  <section id="api">
+    <h2>API 엔드포인트</h2>
+    <p class="section-sub">FastAPI 백엔드 — 전체 라우터 목록 (prefix: /api)</p>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table>
+        <thead>
+          <tr><th>Method</th><th>경로</th><th>설명</th><th>인증</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="method post">POST</span></td><td>/auth/admin/login</td><td>어드민 로그인 → JWT 발급</td><td>—</td></tr>
+          <tr><td><span class="method post">POST</span></td><td>/auth/table/login</td><td>테이블 로그인 → JWT 발급</td><td>—</td></tr>
+          <tr><td><span class="method get">GET</span></td><td>/categories</td><td>카테고리 목록 조회</td><td>—</td></tr>
+          <tr><td><span class="method post">POST</span></td><td>/categories</td><td>카테고리 생성</td><td>어드민</td></tr>
+          <tr><td><span class="method put">PUT</span></td><td>/categories/{id}</td><td>카테고리 수정</td><td>어드민</td></tr>
+          <tr><td><span class="method delete">DELETE</span></td><td>/categories/{id}</td><td>카테고리 삭제</td><td>어드민</td></tr>
+          <tr><td><span class="method get">GET</span></td><td>/menu-items</td><td>메뉴 목록 (카테고리 필터 가능)</td><td>—</td></tr>
+          <tr><td><span class="method post">POST</span></td><td>/menu-items</td><td>메뉴 생성</td><td>어드민</td></tr>
+          <tr><td><span class="method put">PUT</span></td><td>/menu-items/{id}</td><td>메뉴 수정</td><td>어드민</td></tr>
+          <tr><td><span class="method delete">DELETE</span></td><td>/menu-items/{id}</td><td>메뉴 삭제</td><td>어드민</td></tr>
+          <tr><td><span class="method patch">PATCH</span></td><td>/menu-items/{id}/sort-order</td><td>메뉴 정렬 순서 변경</td><td>어드민</td></tr>
+          <tr><td><span class="method post">POST</span></td><td>/orders</td><td>주문 생성 + SSE 브로드캐스트</td><td>테이블</td></tr>
+          <tr><td><span class="method get">GET</span></td><td>/orders</td><td>주문 목록 (테이블/세션 필터)</td><td>—</td></tr>
+          <tr><td><span class="method get">GET</span></td><td>/orders/all</td><td>전체 주문 조회</td><td>어드민</td></tr>
+          <tr><td><span class="method patch">PATCH</span></td><td>/orders/{id}/status</td><td>주문 상태 변경 + SSE 브로드캐스트</td><td>어드민</td></tr>
+          <tr><td><span class="method delete">DELETE</span></td><td>/orders/{id}</td><td>주문 삭제</td><td>어드민</td></tr>
+          <tr><td><span class="method get">GET</span></td><td>/tables</td><td>테이블 목록</td><td>어드민</td></tr>
+          <tr><td><span class="method post">POST</span></td><td>/tables/setup</td><td>테이블 등록/비밀번호 변경</td><td>어드민</td></tr>
+          <tr><td><span class="method post">POST</span></td><td>/tables/{id}/complete</td><td>테이블 세션 종료 → OrderHistory 이동</td><td>어드민</td></tr>
+          <tr><td><span class="method get">GET</span></td><td>/tables/summary</td><td>테이블별 요약 (현황 + 최근 주문)</td><td>어드민</td></tr>
+          <tr><td><span class="method get">GET</span></td><td>/sse</td><td>SSE 스트림 구독</td><td>어드민</td></tr>
+          <tr><td><span class="method get">GET</span></td><td>/history/{table_id}</td><td>테이블 주문 히스토리 (날짜 필터)</td><td>어드민</td></tr>
+          <tr><td><span class="method get">GET</span></td><td>/stats/daily</td><td>일별 매출 통계</td><td>어드민</td></tr>
+          <tr><td><span class="method get">GET</span></td><td>/stats/monthly</td><td>월별 매출 통계</td><td>어드민</td></tr>
+          <tr><td><span class="method post">POST</span></td><td>/call</td><td>직원 호출 SSE 브로드캐스트</td><td>테이블</td></tr>
+          <tr style="background:#F5F3FF;"><td><span class="method post">POST</span></td><td><strong>/chat</strong></td><td>🤖 AI 메뉴 추천 챗봇 (Groq)</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- DATA MODEL -->
+  <section id="datamodel">
+    <h2>데이터 모델</h2>
+    <p class="section-sub">SQLAlchemy ORM — SQLite 저장 테이블 구조</p>
+    <div class="grid-3">
+      <div class="model-box">
+        <div class="model-header">🏪 Store</div>
+        <div class="model-field"><span class="fname">id</span><span class="ftype">String(36) PK</span></div>
+        <div class="model-field"><span class="fname">name</span><span class="ftype">String(100)</span></div>
+        <div class="model-field"><span class="fname">created_at</span><span class="ftype">DateTime</span></div>
+      </div>
+      <div class="model-box">
+        <div class="model-header">👤 Admin</div>
+        <div class="model-field"><span class="fname">id</span><span class="ftype">String(36) PK</span></div>
+        <div class="model-field"><span class="fname">store_id</span><span class="ftype">FK → Store</span></div>
+        <div class="model-field"><span class="fname">username</span><span class="ftype">String(50)</span></div>
+        <div class="model-field"><span class="fname">hashed_password</span><span class="ftype">String(200)</span></div>
+      </div>
+      <div class="model-box">
+        <div class="model-header">🪑 Table</div>
+        <div class="model-field"><span class="fname">id</span><span class="ftype">String(36) PK</span></div>
+        <div class="model-field"><span class="fname">store_id</span><span class="ftype">FK → Store</span></div>
+        <div class="model-field"><span class="fname">table_number</span><span class="ftype">Integer</span></div>
+        <div class="model-field"><span class="fname">hashed_password</span><span class="ftype">String(200)</span></div>
+        <div class="model-field"><span class="fname">session_id</span><span class="ftype">String(36)</span></div>
+        <div class="model-field"><span class="fname">is_active</span><span class="ftype">Boolean</span></div>
+      </div>
+      <div class="model-box">
+        <div class="model-header">🗂️ Category</div>
+        <div class="model-field"><span class="fname">id</span><span class="ftype">String(36) PK</span></div>
+        <div class="model-field"><span class="fname">store_id</span><span class="ftype">FK → Store</span></div>
+        <div class="model-field"><span class="fname">name</span><span class="ftype">String(50)</span></div>
+        <div class="model-field"><span class="fname">sort_order</span><span class="ftype">Integer</span></div>
+      </div>
+      <div class="model-box">
+        <div class="model-header">🍽️ MenuItem</div>
+        <div class="model-field"><span class="fname">id</span><span class="ftype">String(36) PK</span></div>
+        <div class="model-field"><span class="fname">category_id</span><span class="ftype">FK → Category</span></div>
+        <div class="model-field"><span class="fname">store_id</span><span class="ftype">FK → Store</span></div>
+        <div class="model-field"><span class="fname">name</span><span class="ftype">String(100)</span></div>
+        <div class="model-field"><span class="fname">price</span><span class="ftype">Integer</span></div>
+        <div class="model-field"><span class="fname">description</span><span class="ftype">Text</span></div>
+        <div class="model-field"><span class="fname">image_url</span><span class="ftype">String(500)</span></div>
+        <div class="model-field"><span class="fname">sort_order</span><span class="ftype">Integer</span></div>
+      </div>
+      <div class="model-box">
+        <div class="model-header">📦 Order</div>
+        <div class="model-field"><span class="fname">id</span><span class="ftype">String(36) PK</span></div>
+        <div class="model-field"><span class="fname">store_id</span><span class="ftype">FK → Store</span></div>
+        <div class="model-field"><span class="fname">table_id</span><span class="ftype">FK → Table</span></div>
+        <div class="model-field"><span class="fname">session_id</span><span class="ftype">String(36)</span></div>
+        <div class="model-field"><span class="fname">status</span><span class="ftype">Enum(pending…)</span></div>
+        <div class="model-field"><span class="fname">total_amount</span><span class="ftype">Integer</span></div>
+        <div class="model-field"><span class="fname">created_at</span><span class="ftype">DateTime</span></div>
+      </div>
+      <div class="model-box">
+        <div class="model-header">📝 OrderItem</div>
+        <div class="model-field"><span class="fname">id</span><span class="ftype">String(36) PK</span></div>
+        <div class="model-field"><span class="fname">order_id</span><span class="ftype">FK → Order</span></div>
+        <div class="model-field"><span class="fname">menu_item_name</span><span class="ftype">String(100)</span></div>
+        <div class="model-field"><span class="fname">quantity</span><span class="ftype">Integer</span></div>
+        <div class="model-field"><span class="fname">unit_price</span><span class="ftype">Integer</span></div>
+      </div>
+      <div class="model-box">
+        <div class="model-header">🕓 OrderHistory</div>
+        <div class="model-field"><span class="fname">id</span><span class="ftype">String(36) PK</span></div>
+        <div class="model-field"><span class="fname">store_id / table_id</span><span class="ftype">String(36)</span></div>
+        <div class="model-field"><span class="fname">table_number</span><span class="ftype">Integer</span></div>
+        <div class="model-field"><span class="fname">session_id</span><span class="ftype">String(36)</span></div>
+        <div class="model-field"><span class="fname">items_json</span><span class="ftype">Text (JSON)</span></div>
+        <div class="model-field"><span class="fname">ordered_at</span><span class="ftype">DateTime</span></div>
+        <div class="model-field"><span class="fname">completed_at</span><span class="ftype">DateTime</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI SECTION -->
+  <section id="ai">
+    <h2>AI 연동 — 메뉴 추천 챗봇</h2>
+    <p class="section-sub">Groq API (llama-3.3-70b-versatile) 기반 메뉴 추천 기능</p>
+
+    <div class="ai-highlight">
+      <h3>🤖 AI 챗봇 아키텍처</h3>
+      <p style="font-size:13px; color:#4B5563;">고객이 자연어로 메뉴를 질문하면, 백엔드가 실시간으로 DB에서 전체 메뉴를 조회해 AI 시스템 프롬프트에 주입합니다. 멀티턴 대화 히스토리를 유지하며 문맥에 맞는 추천을 제공합니다.</p>
+
+      <div class="ai-flow">
+        <div class="ai-step"><div class="num">1</div><div class="lbl">고객 입력<br>"추천해줘"</div></div>
+        <div class="ai-arrow">→</div>
+        <div class="ai-step"><div class="num">2</div><div class="lbl">POST /api/chat<br>message + history</div></div>
+        <div class="ai-arrow">→</div>
+        <div class="ai-step"><div class="num">3</div><div class="lbl">DB 메뉴 조회<br>카테고리별 포맷</div></div>
+        <div class="ai-arrow">→</div>
+        <div class="ai-step"><div class="num">4</div><div class="lbl">System Prompt<br>메뉴 데이터 주입</div></div>
+        <div class="ai-arrow">→</div>
+        <div class="ai-step"><div class="num">5</div><div class="lbl">Groq API 호출<br>llama-3.3-70b</div></div>
+        <div class="ai-arrow">→</div>
+        <div class="ai-step"><div class="num">6</div><div class="lbl">응답 반환<br>채팅 패널 표시</div></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>📌 기술 스펙</h3>
+        <ul class="feature-list">
+          <li><span class="icon">🔗</span><div><strong>API Provider</strong>: Groq (api.groq.com/openai/v1)<br><span style="font-size:12px;color:var(--text-muted);">OpenAI 호환 인터페이스 사용</span></div></li>
+          <li><span class="icon">🧠</span><div><strong>Model</strong>: llama-3.3-70b-versatile<br><span style="font-size:12px;color:var(--text-muted);">Groq 고속 추론 엔진</span></div></li>
+          <li><span class="icon">✂️</span><div><strong>Max Tokens</strong>: 512<br><span style="font-size:12px;color:var(--text-muted);">2-3문장 간결 응답 유도</span></div></li>
+          <li><span class="icon">💬</span><div><strong>멀티턴 대화</strong>: history 배열로 문맥 유지<br><span style="font-size:12px;color:var(--text-muted);">role: user / assistant 교대</span></div></li>
+          <li><span class="icon">🔑</span><div><strong>환경변수</strong>: GROQ_API_KEY<br><span style="font-size:12px;color:var(--text-muted)">.env 또는 docker-compose environment</span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>🎨 UI 구성</h3>
+        <ul class="feature-list">
+          <li><span class="icon">💬</span><div><strong>플로팅 버튼</strong>: 메뉴 페이지 우측 하단 고정<br><span style="font-size:12px;color:var(--text-muted);">bottom: 72px, z-index: 45</span></div></li>
+          <li><span class="icon">📱</span><div><strong>채팅 패널</strong>: 360×480px 오버레이<br><span style="font-size:12px;color:var(--text-muted);">메시지 스크롤 · 자동 스크롤</span></div></li>
+          <li><span class="icon">⚡</span><div><strong>프리셋 질문</strong>: 처음 접속 시 빠른 입력 버튼<br><span style="font-size:12px;color:var(--text-muted);">"오늘 추천 메뉴는?" / "고기 요리 뭐 있어요?"</span></div></li>
+          <li><span class="icon">🔄</span><div><strong>로딩 상태</strong>: "답변 중..." 표시<br><span style="font-size:12px;color:var(--text-muted);">전송 버튼 비활성화로 중복 방지</span></div></li>
+          <li><span class="icon">🛡️</span><div><strong>에러 처리</strong>: 네트워크 오류 시 안내 메시지<br><span style="font-size:12px;color:var(--text-muted);">API 키 미설정 시 503 응답</span></div></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px; background:#1e1e2e; color:#cdd6f4; font-family:monospace; font-size:13px; line-height:1.7;">
+      <div style="color:#89b4fa; font-weight:700; margin-bottom:12px;"># routers/chat.py — 핵심 로직 요약</div>
+      <div><span style="color:#cba6f7;">@router.post</span>(<span style="color:#a6e3a1;">"/chat"</span>)</div>
+      <div><span style="color:#cba6f7;">def</span> <span style="color:#89b4fa;">chat</span>(body, db):</div>
+      <div>&nbsp;&nbsp;store_name, menu_text = <span style="color:#89dceb;">_build_menu_context</span>(db)  <span style="color:#6c7086;"># DB 메뉴 조회</span></div>
+      <div>&nbsp;&nbsp;system = <span style="color:#a6e3a1;">f"당신은 '{store_name}' 레스토랑 AI 도우미... {menu_text}"</span></div>
+      <div>&nbsp;&nbsp;messages = [system] + history + [user_message]</div>
+      <div>&nbsp;&nbsp;client = <span style="color:#89dceb;">OpenAI</span>(api_key=GROQ_API_KEY, base_url=<span style="color:#a6e3a1;">"https://api.groq.com/openai/v1"</span>)</div>
+      <div>&nbsp;&nbsp;response = client.chat.completions.<span style="color:#89dceb;">create</span>(model=<span style="color:#a6e3a1;">"llama-3.3-70b-versatile"</span>, ...)</div>
+      <div>&nbsp;&nbsp;<span style="color:#cba6f7;">return</span> {<span style="color:#a6e3a1;">"reply"</span>: response.choices[0].message.content}</div>
+    </div>
+  </section>
+
+  <!-- DEPLOYMENT -->
+  <section>
+    <h2>배포 구성</h2>
+    <p class="section-sub">Docker Compose 2-service 스택</p>
+    <div class="grid-2">
+      <div class="card" style="background:#1e1e2e; color:#cdd6f4; font-family:monospace; font-size:13px; line-height:1.9;">
+        <div style="color:#89b4fa; font-weight:700; margin-bottom:8px;"># docker-compose.yml</div>
+        <div><span style="color:#cba6f7;">services</span>:</div>
+        <div>&nbsp;&nbsp;<span style="color:#89dceb;">backend</span>:  <span style="color:#6c7086;"># FastAPI :8000</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;environment:</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#a6e3a1;">DATABASE_URL</span>: sqlite:////app/data/tableorder.db</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#a6e3a1;">GROQ_API_KEY</span>: ${GROQ_API_KEY}</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;volumes: [sqlite_data:/app/data]</div>
+        <div>&nbsp;&nbsp;<span style="color:#89dceb;">frontend</span>: <span style="color:#6c7086;"># React Vite :5173</span></div>
+        <div><span style="color:#cba6f7;">volumes</span>:</div>
+        <div>&nbsp;&nbsp;<span style="color:#89dceb;">sqlite_data</span>: <span style="color:#6c7086;"># DB 퍼시스턴스</span></div>
+      </div>
+      <div class="card">
+        <h3>🚀 실행 방법</h3>
+        <ul class="feature-list">
+          <li><span class="icon">1️⃣</span><div><strong>환경변수 설정</strong><br><code style="font-size:12px;background:#F3F4F6;padding:2px 6px;border-radius:4px;">echo "GROQ_API_KEY=gsk_..." &gt; .env</code></div></li>
+          <li><span class="icon">2️⃣</span><div><strong>빌드 및 기동</strong><br><code style="font-size:12px;background:#F3F4F6;padding:2px 6px;border-radius:4px;">docker-compose up --build -d</code></div></li>
+          <li><span class="icon">3️⃣</span><div><strong>테이블 생성 (어드민)</strong><br>admin / admin1234 로그인 후 테이블 등록</div></li>
+          <li><span class="icon">4️⃣</span><div><strong>고객 접속</strong><br><code style="font-size:12px;background:#F3F4F6;padding:2px 6px;border-radius:4px;">http://localhost:5173</code></div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <strong>Table Order System</strong> — AI-DLC 방법론으로 개발 &nbsp;|&nbsp; FastAPI + React + SQLite + Groq AI
+</footer>
+
+</body>
+</html>
